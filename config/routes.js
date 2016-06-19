@@ -34,7 +34,13 @@ module.exports.routes = {
 
   '/': {
     view: 'homepage'
-  }
+  },
+  'get /user/:id' : 'UserController.find',
+  'post /user' : 'UserController.create',
+  'get /game/:id' : 'GameController.gameDetails',
+  'get /games' : 'GameController.gameList',
+  'post /user/:id/game' : 'GameController.create',
+  'post /user/:id/game/:gid/register' : 'GameController.register'
 
   /***************************************************************************
   *                                                                          *

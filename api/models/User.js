@@ -15,10 +15,15 @@ module.exports = {
       unique: true,
     },
     name: {
-	  type: 'string',
-	  required: true
+  	  type: 'string',
+  	  required: true,
+      unique: true
     },
-    ip: 'string',
+    ip: {
+      type: 'string',
+      required: true,
+     // unique: true
+    },
     games: {
       collection: 'game',
       via: 'players',
