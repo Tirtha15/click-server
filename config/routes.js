@@ -40,7 +40,8 @@ module.exports.routes = {
   'get /game/:id' : 'GameController.gameDetails',
   'get /games' : 'GameController.gameList',
   'post /user/:id/game' : 'GameController.create',
-  'post /user/:id/game/:gid/register' : 'GameController.register'
+  'post /user/:id/game/:gid/register' : 'GameController.register',
+  'post /user/:id/game/:gid/click' : 'GameController.click',
 
   /***************************************************************************
   *                                                                          *

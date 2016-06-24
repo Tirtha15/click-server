@@ -5,6 +5,8 @@
  * @help        :: See http://sailsjs.org/#!/documentation/concepts/Controllers
  */
 
+var _ = require('lodash');
+
 module.exports = {
 	create: function(req, res){
       sails.log.debug('create game API');
@@ -77,11 +79,71 @@ module.exports = {
 	  sails.log.debug('Game details api');
 	  if(!req.params.id)
 	  	return res.badRequest({code:'BAD_REQUEST', message: 'game id not specified'});
-	  Game.findOne({id: req.params.id}).populate('players').exec(function(err, game){
-	  	if(err)
-	  	  return res.serverError(err);
-	  	res.json(game);
-	  });
+    async.auto({
+      game: function(callback){
+        Game.findOne({id: req.params.id}).populate('players').exec(function(err, game){
+          if(err)
+            return callback(err);
+          if(!game)
+            return callback({code:'BAD_REQUEST', message: 'Invalid game id'});
+          return callback(null, callback);
+        });
+      },
+      color:['game', function(callback, results){
+        var players = [];
+        async.map(results.game.players, function(player, mapCb){
+          UserColor.findOne({
+            user: player.id,
+            game: results.game.id
+          }).exec(function(err,color){
+            if(err)
+              return mapCb(err);
+            player.color = color;
+            players.push(player);
+            mapCb();
+          });
+        }, function(err, results){
+            if(err)
+              return callback(err);
+            return callback(null, players);
+        });
+      }],
+      score:['game', function(callback, results){
+        var score = [];
+        async.map(results.game.players, function(player, mapCb){
+          GameState.find({
+            user: player.id,
+            game: results.game.id
+          }).exec(function(err, gs){
+            if(err)
+              return mapCb(err);
+            scores.push(gs);
+            return mapCb();
+          });
+        }, function(err, results){
+          if(err)
+            return callback(err);
+          callback(null, scores);
+        });
+      }],
+    },function(err, results){
+      if(err){
+        if(err.code){
+            if(err.code === 'BAD_REQUEST')
+              return res.badRequest(err);
+            else if(err.code === 'NOT_FOUND')
+              return res.notFound(err);
+            else
+              return res.serverError(err);
+        }
+      }
+      var response = {
+        game: _.omit(results.game, 'players'),
+        color: results.color,
+        score: results.score
+      };
+      res.json(response);
+    });
 	},
 	register: function(req, res){
     if(!req.params.id)
@@ -101,6 +163,58 @@ module.exports = {
 	  	}
 	  	return res.json({status:'user registered', user:gamePlayer.user, game: gamePlayer.game});
 	  });
-	}
+	},
+  click: function(req, res){
+    var userId = req.params.id;
+    var gameId = req.params.gid;
+    var sqId = req.body.sqId;
+
+    async.auto({
+      user: function(callback){
+        User.findOne({id: userId}).exec(function(err, user){
+          if(err)
+            return callback(err);
+          if(!user)
+            return callback({code:'BAD_REQUEST', message: 'Invalid user id'});
+          return callback(null, user);
+        });
+      },
+      game: function(callback){
+        Game.findOne({id: gameId}).populate('players').exec(function(err, game){
+          if(err)
+            return callback(err);
+          if(!game)
+            return callback({code:'BAD_REQUEST', message: 'Invalid game id'});
+          var player = _.filter(game.players, function(player){
+            return player.id == userId;
+          });
+          if (player.length != 1)
+            return callback({code:'BAD_REQUEST', message: 'user not player of this game'});
+          return callback(null, game);
+        });
+      },
+      click:['user', 'game', function(callback, results){
+        if (sqId < 0 || sqId > results.game.rows * results.game.columns)
+          return callback({code:'BAD_REQUEST', message: 'Invalid square'});
+        GameService.click(results.game.id, results.user.id, sqId, function(err, gamePos){
+          if(err)
+            return callback(err)
+          return (null, callback);
+        });
+      }],
+    },function(err, results){
+      if(err){
+        if(err.code){
+            if(err.code === 'BAD_REQUEST')
+              return res.badRequest(err);
+            else if(err.code === 'NOT_FOUND')
+              return res.notFound(err);
+            else
+              return res.serverError(err);
+        }
+      }
+      return res.json({ok:1});
+    });
+  },
 };
 

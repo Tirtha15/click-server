@@ -1,3 +1,4 @@
+var _ = require('lodash');
 module.exports = {
 	create : function(params, cb){
       if(!params.rows)
@@ -52,7 +53,45 @@ module.exports = {
 					  return callback(err);
                     return callback(null, regPlayer);
 				});
+			}],
+			assignColor:['register', function(callback, results){
+				var toCreate = {
+					game: results.game.id,
+					user: results.user.id,
+					color: utils.getRandomColor
+				};
+				UserColor.create(toCreate).exec(function(err, usercol){
+				  if(err)
+					  return callback(err);
+                    return callback(null, usercol);
+				});
 			}]
 		}, cb);
+	},
+	click: function(gameId, userId, squareId, cb){
+
+	  async.auto({
+	  	state: function(callback){
+	  		GameState.find({game: gameId}).exec(function(err, gs){
+              if(err)
+              	callback(err);
+              var checkState = _.filter(gs, function(g){
+              	g.squareId == squareId;
+              });
+              if (checkState.length > 0)
+              	return callback({code:'BAD_REQUEST', message: 'Square already acquired.'});
+              //check if current time is last insert time + blockTime or more TODO
+              return callback(null, gs);
+	  		});
+	  	},
+	  	create:['state', function(callback, results){
+	  		var toCreate = {
+	  			user: userId,
+	  			game: gameId,
+	  			squareId: squareId
+	  		};
+	  		GameState.create(toCreate).exec(callback);
+	  	}]
+	  }, cb);
 	}
 };
