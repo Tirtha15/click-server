@@ -84,9 +84,9 @@ module.exports = {
 	  });
 	},
 	register: function(req, res){
-      if(!req.params.id)
-      	return res.badRequest({code: 'BAD_REQUEST', message: 'user id not specified'});
-      if(!req.params.gid)
+    if(!req.params.id)
+      return res.badRequest({code: 'BAD_REQUEST', message: 'user id not specified'});
+    if(!req.params.gid)
 	  	return res.badRequest({code:'BAD_REQUEST', message: 'game id not specified'});
 	  GameService.registerUser(req.params.gid, req.params.id, function(err, gamePlayer){
 	  	if(err){
