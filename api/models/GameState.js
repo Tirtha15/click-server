@@ -20,6 +20,9 @@ module.exports = {
     },
     game:{
       model: 'game'
+    },
+    color:{
+    	type: 'string'
     }
   },
   beforeCreate: function(values, next) {
@@ -32,8 +35,19 @@ module.exports = {
     if (values.updatedAt) {
       delete values.updatedAt;
     }
+    if (values.color) {
+      delete values.color;
+    }
     values.id = utils.uuid();
-    next();
+    UserColor.findOne({
+    	game: values.game,
+    	user: values.user
+    }).exec(function(err, uc){
+    	if(err)
+    		return next(err)
+    	values.color = uc.color;
+    	next();
+    });
   }
 };
 

@@ -86,7 +86,7 @@ module.exports = {
             return callback(err);
           if(!game)
             return callback({code:'BAD_REQUEST', message: 'Invalid game id'});
-          return callback(null, callback);
+          return callback(null, game);
         });
       },
       color:['game', function(callback, results){
@@ -109,7 +109,7 @@ module.exports = {
         });
       }],
       score:['game', function(callback, results){
-        var score = [];
+        var scores = [];
         async.map(results.game.players, function(player, mapCb){
           GameState.find({
             user: player.id,
@@ -117,6 +117,7 @@ module.exports = {
           }).exec(function(err, gs){
             if(err)
               return mapCb(err);
+            player.score = gs;
             scores.push(gs);
             return mapCb();
           });
@@ -126,6 +127,17 @@ module.exports = {
           callback(null, scores);
         });
       }],
+      SquareColors: function(callback){
+        GameState.find({game: req.params.id}).exec(function(err, gs){
+          if(err)
+            return callback(err);
+          var transform = {};
+          _.forEach(gs, function(g){
+             transform[g.squareId] = g.color;
+          });
+          return callback(null, transform);
+        });
+      }
     },function(err, results){
       if(err){
         if(err.code){
@@ -138,9 +150,8 @@ module.exports = {
         }
       }
       var response = {
-        game: _.omit(results.game, 'players'),
-        color: results.color,
-        score: results.score
+        game: results.game,
+        state: results.SquareColors
       };
       res.json(response);
     });

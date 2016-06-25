@@ -58,7 +58,7 @@ module.exports = {
 				var toCreate = {
 					game: results.game.id,
 					user: results.user.id,
-					color: utils.getRandomColor
+					color: utils.getRandomColor()
 				};
 				UserColor.create(toCreate).exec(function(err, usercol){
 				  if(err)
