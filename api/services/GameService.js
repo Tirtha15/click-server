@@ -29,11 +29,13 @@ module.exports = {
 		  return cb({code:'BAD_REQUEST', message: 'user id not defined'});
 		async.auto({
 			game: function(callback){
-				Game.findOne({id: gameId}).exec(function(err, game){
+				Game.findOne({id: gameId}).populate('players').exec(function(err, game){
 					if(err)
 					  return callback(err);
 					if(!game)
 					  return callback({code: 'NOT_FOUND', message: 'invalid game id'});
+					if(game.players.length >= game.maxPlayers )
+					  return callback({code: 'BAD_REQUEST', message: 'no more player found'});
 					return callback(null, game);
 				});
 			},

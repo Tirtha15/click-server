@@ -196,6 +196,8 @@ module.exports = {
             return callback(err);
           if(!game)
             return callback({code:'BAD_REQUEST', message: 'Invalid game id'});
+          if(game.players.length < game.minPlayers)
+            return callback({code:'BAD_REQUEST', message: 'Waiting for minimum players.'});
           var player = _.filter(game.players, function(player){
             return player.id == userId;
           });
@@ -204,6 +206,11 @@ module.exports = {
           return callback(null, game);
         });
       },
+      startTime:['game', function(callback, results){
+         if(results.game.startTime)
+          return callback();
+         Game.update({id: gameId}, {startTime: new Date()}).exec(callback);
+      }],
       click:['user', 'game', function(callback, results){
         if (sqId < 0 || sqId > results.game.rows * results.game.columns)
           return callback({code:'BAD_REQUEST', message: 'Invalid square'});
