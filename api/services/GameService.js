@@ -78,7 +78,8 @@ module.exports = {
               if(err)
               	callback(err);
               var checkState = _.filter(gs, function(g){
-              	g.squareId == squareId;
+              	//sails.log.debug(g.squareId);
+              	return g.squareId == squareId;
               });
               if (checkState.length > 0)
               	return callback({code:'BAD_REQUEST', message: 'Square already acquired.'});

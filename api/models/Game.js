@@ -23,7 +23,8 @@ module.exports = {
       collection: 'user',
       via: 'games',
     },
-    startTime: 'dateTime'
+    startTime: 'dateTime',
+    lastClick: 'dateTime'
   },
   beforeCreate: function(values, next) {
     if (values.id) {

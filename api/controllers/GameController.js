@@ -76,7 +76,7 @@ module.exports = {
 	  });
 	},
 	gameDetails: function(req, res){
-	  sails.log.debug('Game details api');
+	 // sails.log.debug('Game details api');
 	  if(!req.params.id)
 	  	return res.badRequest({code:'BAD_REQUEST', message: 'game id not specified'});
     async.auto({
@@ -127,7 +127,7 @@ module.exports = {
           callback(null, scores);
         });
       }],
-      SquareColors: function(callback){
+      SquareColors:['game', function(callback, results){
         GameState.find({game: req.params.id}).exec(function(err, gs){
           if(err)
             return callback(err);
@@ -135,9 +135,16 @@ module.exports = {
           _.forEach(gs, function(g){
              transform[g.squareId] = g.color;
           });
-          return callback(null, transform);
+          var toReturn = {
+            sc: transform,
+            finished: 0
+          };
+          if(gs.length == results.game.rows * results.game.columns)
+            toReturn.finished = 1;
+
+          return callback(null, toReturn);
         });
-      }
+      }]
     },function(err, results){
       if(err){
         if(err.code){
@@ -151,7 +158,8 @@ module.exports = {
       }
       var response = {
         game: results.game,
-        state: results.SquareColors
+        state: results.SquareColors.sc,
+        finished: results.SquareColors.finished
       };
       res.json(response);
     });
@@ -203,6 +211,11 @@ module.exports = {
           });
           if (player.length != 1)
             return callback({code:'BAD_REQUEST', message: 'user not player of this game'});
+          if(game.lastClick){
+            var diff = Math.abs(game.lastClick - new Date);
+            if(diff < game.blockTime*1000)
+              return callback({code:'BAD_REQUEST', message: 'Blocked'});
+          }
           return callback(null, game);
         });
       },
@@ -219,7 +232,7 @@ module.exports = {
             return callback(err)
           return (null, callback);
         });
-      }],
+      }]
     },function(err, results){
       if(err){
         if(err.code){

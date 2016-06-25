@@ -46,7 +46,7 @@ module.exports = {
     	if(err)
     		return next(err)
     	values.color = uc.color;
-    	next();
+    	Game.update({id: values.game}, {lastClick: new Date()}).exec(next);
     });
   }
 };
